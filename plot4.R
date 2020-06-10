@@ -1,0 +1,55 @@
+# PLOT 4
+# Reading data
+
+data <- read.delim("household_power_consumption.txt", header=TRUE, sep=";", na.strings = "?", colClasses = c('character','character','numeric','numeric','numeric','numeric','numeric','numeric','numeric'))
+
+#Transform date column into date format
+data <- mutate(Date = dmy(Date), data)
+str(data)
+
+#Filter data for days between 1st Feb 2007 to 2nd Feb 2007
+data <- filter(data, (Date >= "2007-02-01" & Date <= "2007-02-02"))
+str(data)
+
+# Delete NAs = ?
+data <- data[complete.cases(data), ]
+str(data)
+
+# Extract Date and Time columns to join them
+dateTime <- paste(data$Date, data$Time)
+dateTime <- setNames(dateTime, "DateTime")
+
+# Add dateTime column to data frame
+
+data <- select(data, c("Global_active_power", "Global_reactive_power", "Voltage", "Global_intensity", "Sub_metering_1", "Sub_metering_2", "Sub_metering_3"))
+data <- mutate(dateTime = dateTime, data)
+data <- data %>% select(dateTime, everything())
+
+# Convert dateTime column into dateTime format
+
+data <- data %>% mutate(dateTime = as.POSIXct(dateTime))
+data1 <- data %>% mutate(dateTime = strptime(dateTime, format = "%Y-%m-%d %H:%M:%S"))
+
+### Graph 4
+png(file = "plot4.png", width = 480, height = 480, units = "px")
+par(mfrow = c(2, 2)) #Set 4 spaces for graphics
+
+# Create graph 1
+plot(data$dateTime, data$Global_active_power, col = "black", xlab = "", ylab = "Global Active Power", type = "n")
+lines(data$dateTime, data$Global_active_power)
+
+# Create graph 2
+with(data, plot(dateTime, Voltage, xlab = "datetime", ylab = "Voltage", type = "n"))
+lines(data$dateTime, data$Voltage, col = "black")
+
+# Create graph 3
+with(data, plot(dateTime, Sub_metering_1, xlab = "", ylab = "Energy sub metering", type = "n"))
+lines(data$dateTime, data$Sub_metering_1, col = "black")
+lines(data$dateTime, data$Sub_metering_2, col = "red")
+lines(data$dateTime, data$Sub_metering_3, col = "blue")
+legend("topright", lty = 1, col = c("black", "red", "blue"), legend = c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"), box.lty = 0)
+
+# Create graph 4
+with(data, plot(dateTime, Global_reactive_power, xlab = "datetime", ylab = "Global_reactive_power", type = "n"))
+lines(data$dateTime, data$Global_reactive_power, col = "black")
+dev.off()
